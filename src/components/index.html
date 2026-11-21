@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{ description }}">
+  <title>{{ app_name }} — аналитика телеметрии</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="На главную">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+            <path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <strong>{{ app_name }}</strong>
+          <small>аналитика телеметрии</small>
+        </span>
+      </a>
+
+      <nav class="nav" aria-label="Основная навигация">
+        <button class="nav-item is-active" type="button" data-view="dashboard">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
+            <rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>
+          </svg>
+          <span>Дашборд</span>
+        </button>
+        <button class="nav-item" type="button" data-view="reports">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 7a2 2 0 0 1 2-2h8l4 4v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+            <path d="M14 5v4h4M8 13h6M8 16h4"/>
+          </svg>
+          <span>Отчёты</span>
+          <span class="nav-count" id="reports-count">0</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-note">
+        <p class="sidebar-note-title">Как это работает</p>
+        <p>Загрузите Excel-отчёт — сервис нормализует строки, посчитает метрики и построит графики по каждой колонке.</p>
+      </div>
+
+      <div class="sidebar-meta">
+        <div class="meta-row"><span>Версия</span><b>{{ version }}</b></div>
+        <a class="meta-link" href="/docs" target="_blank" rel="noopener">
+          API-документация
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+        </a>
+        <div class="meta-row meta-status"><span class="dot" id="health-dot"></span><span id="health-text">проверка…</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1 id="page-title">Дашборд</h1>
+          <p id="page-subtitle">Технические характеристики видео и телеметрия трекинга</p>
+        </div>
+        <div class="topbar-actions">
+          <label class="sr-only" for="report-select">Отчёт</label>
+          <div class="select-wrap">
+            <select id="report-select" class="select"></select>
+          </div>
+          <button class="icon-btn" type="button" id="theme-toggle" title="Переключить тему" aria-label="Переключить тему">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
+          </button>
+          <button class="btn btn-primary" type="button" id="upload-open">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            Загрузить отчёт
+          </button>
+        </div>
+      </header>
+
+      <section class="view" id="view-dashboard">
+        <div class="sheet-tabs" id="sheet-tabs" role="tablist" aria-label="Листы отчёта"></div>
+
+        <div class="toolbar" id="toolbar">
+          <div class="field">
+            <label for="date-from">Период с</label>
+            <input type="date" id="date-from" class="input">
+          </div>
+          <div class="field">
+            <label for="date-to">по</label>
+            <input type="date" id="date-to" class="input">
+          </div>
+          <div class="field field-grow">
+            <span class="field-label">Детализация</span>
+            <div class="segmented" id="granularity" role="group" aria-label="Детализация по времени"></div>
+          </div>
+          <div class="field">
+            <label for="aggregation">Агрегация</label>
+            <select id="aggregation" class="select"></select>
+          </div>
+          <button class="btn btn-ghost" type="button" id="reset-filters">Сбросить</button>
+        </div>
+
+        <div class="kpi-grid" id="kpi-grid" aria-live="polite"></div>
+
+        <div class="charts" id="charts" aria-live="polite"></div>
+
+        <section class="panel table-panel">
+          <header class="panel-head">
+            <div>
+              <h2>Данные листа</h2>
+              <p class="panel-subtitle" id="table-subtitle">Нормализованные записи отчёта</p>
+            </div>
+            <div class="panel-actions">
+              <label class="sr-only" for="table-search">Поиск</label>
+              <input type="search" id="table-search" class="input input-search" placeholder="Поиск по записям…">
+              <div class="export-group">
+                <button class="btn btn-ghost btn-sm" type="button" data-export="csv">CSV</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-export="xlsx">Excel</button>
+              </div>
+            </div>
+          </header>
+          <div class="table-scroll">
+            <table class="data-table" id="data-table">
+              <thead id="table-head"></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+            <div class="table-empty is-hidden" id="table-empty">Нет записей по выбранным фильтрам</div>
+          </div>
+          <footer class="panel-foot">
+            <span id="table-range" class="muted">—</span>
+            <div class="pagination">
+              <button class="btn btn-ghost btn-sm" type="button" id="page-prev">Назад</button>
+              <span id="page-label" class="page-label">1 / 1</span>
+              <button class="btn btn-ghost btn-sm" type="button" id="page-next">Вперёд</button>
+            </div>
+          </footer>
+        </section>
+      </section>
+
+      <section class="view is-hidden" id="view-reports">
+        <div class="section-head">
+          <div>
+            <h2>Загруженные отчёты</h2>
+            <p class="muted">Каждый отчёт хранится отдельно: можно смотреть данные вместе или по одному.</p>
+          </div>
+        </div>
+        <div class="report-list" id="report-list"></div>
+      </section>
+
+      <div class="view-empty is-hidden" id="empty-state">
+        <div class="empty-card">
+          <span class="empty-icon">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          </span>
+          <h2>Пока нет данных</h2>
+          <p>Загрузите Excel-отчёт с листами «Детали» и «Трекеры», чтобы построить дашборд.</p>
+          <button class="btn btn-primary" type="button" id="empty-upload">Загрузить первый отчёт</button>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <span>{{ app_name }} · v{{ version }}</span>
+        <span class="muted">FastAPI · Plotly · SQLite</span>
+      </footer>
+    </main>
+  </div>
+
+  <div class="modal" id="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-title" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-card">
+      <header class="modal-head">
+        <h2 id="upload-title">Загрузка отчёта</h2>
+        <button class="icon-btn" type="button" aria-label="Закрыть" data-close-modal>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <div class="dropzone" id="dropzone" tabindex="0">
+        <input type="file" id="file-input" accept=".xlsx,.xlsm" hidden>
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        <p><strong>Перетащите файл</strong> или нажмите, чтобы выбрать</p>
+        <p class="muted small">Поддерживаются .xlsx и .xlsm · до 256 МБ</p>
+      </div>
+      <div class="file-chip is-hidden" id="file-chip">
+        <div class="file-chip-info">
+          <strong id="file-name">—</strong>
+          <span class="muted small" id="file-size">—</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" type="button" id="file-clear">Убрать</button>
+      </div>
+      <div class="field">
+        <label for="report-title">Название отчёта (необязательно)</label>
+        <input type="text" id="report-title" class="input" placeholder="Например, PT — октябрь 2026" maxlength="120">
+      </div>
+      <div class="progress is-hidden" id="upload-progress"><div class="progress-bar" id="progress-bar"></div></div>
+      <footer class="modal-foot">
+        <button class="btn btn-ghost" type="button" data-close-modal>Отмена</button>
+        <button class="btn btn-primary" type="button" id="upload-submit" disabled>Загрузить и обработать</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toast" aria-live="assertive"></div>
+
+  <script src="/static/vendor/plotly.min.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/charts.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

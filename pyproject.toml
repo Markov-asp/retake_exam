@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datascope"
+version = "1.0.0"
+description = "Сервис обработки и визуализации данных: технические характеристики видео и телеметрия трекинга"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "DataScope contributors" }]
+keywords = ["fastapi", "plotly", "dashboard", "analytics", "xlsx", "telemetry"]
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn>=0.30,<1.0",
+    "jinja2>=3.1,<4.0",
+    "python-multipart>=0.0.9,<1.0",
+    "plotly>=5.24,<8.0",
+    "openpyxl>=3.1,<4.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0,<10.0", "httpx>=0.27,<1.0", "ruff>=0.6"]
+
+[tool.setuptools]
+packages = ["src", "src.api", "src.services", "src.utils", "src.components", "src.styles"]
+
+[tool.setuptools.package-data]
+"src.components" = ["*.html", "*.svg", "js/*.js", "vendor/*.js"]
+"src.styles" = ["*.css"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+extend-exclude = ["src/components/vendor"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "B008"]
